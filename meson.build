@@ -531,8 +531,8 @@ mod_names = [
 mod_fwd_decl = []
 mod_table_rows = []
 foreach name : mod_names
-  mod_fwd_decl += 'extern PyObject* PyInit_@0@(void);'.format(name)
-  mod_table_rows += '    {"@0@", PyInit_@0@},'.format(name)
+  mod_fwd_decl += f'extern PyObject* PyInit_@name@(void);'
+  mod_table_rows += f'    {"@name@", PyInit_@name@},'
 endforeach
 
 sed = find_program('sed')
