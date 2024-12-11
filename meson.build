@@ -500,10 +500,58 @@ pyconfig_h = configure_file(
   output: 'pyconfig.h',
   configuration: pyconfig_data)
 
-config_c = configure_file(
+mod_names = [
+  'atexit',
+  'faulthandler',
+  'posix',
+  '_signal',
+  '_tracemalloc',
+  '_suggestions',
+  '_codecs',
+  '_collections',
+  'errno',
+  '_io',
+  'itertools',
+  '_sre',
+  '_sysconfig',
+  '_thread',
+  'time',
+  '_typing',
+  '_weakref',
+  '_abc',
+  '_functools',
+  '_locale',
+  '_opcode',
+  '_operator',
+  '_stat',
+  '_symtable',
+  'pwd',
+]
+
+mod_fwd_decl = []
+mod_table_rows = []
+foreach name : mod_names
+  mod_fwd_decl += 'extern PyObject* PyInit_@0@(void);'.format(name)
+  mod_table_rows += '    {"@0@", PyInit_@0@},'.format(name)
+endforeach
+
+sed = find_program('sed')
+config_c_in = custom_target(
   input: 'Modules/config.c.in',
+  output: 'config.c.in',
+  command: [sed,
+    '-e', 's/\/\* -- ADDMODULE MARKER 1 -- \*\//@MARKER1@/g',
+    '-e', 's/\/\* -- ADDMODULE MARKER 2 -- \*\//@MARKER2@/g',
+    '@INPUT@'],
+  capture: true)
+
+config_c = configure_file(
+  input: config_c_in,
   output: 'config.c',
-  configuration: {})
+  configuration: {
+    'MARKER1': '\n'.join(mod_fwd_decl),
+    'MARKER2': '\n'.join(mod_table_rows),
+  })
 
 py_include_dirs = include_directories(
   '.',
