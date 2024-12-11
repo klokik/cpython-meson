@@ -536,14 +536,10 @@ foreach name : mod_names
 endforeach
 
 sed = find_program('sed')
-config_c_in = custom_target(
-  input: 'Modules/config.c.in',
-  output: 'config.c.in',
-  command: [sed,
-    '-e', 's/\/\* -- ADDMODULE MARKER 1 -- \*\//@MARKER1@/g',
-    '-e', 's/\/\* -- ADDMODULE MARKER 2 -- \*\//@MARKER2@/g',
-    '@INPUT@'],
-  capture: true)
+sh = find_program('sh')
+config_c_in = meson.current_build_dir() / 'config.c.in'
+marker_cmd = sed.full_path() + ' -e "s/\/\* -- ADDMODULE MARKER 1 -- \*\//@MARKER1@/g" -e "s/\/\* -- ADDMODULE MARKER 2 -- \*\//@MARKER2@/g"' + f' @0@/Modules/config.c.in > @1@'.format(meson.current_source_dir(), config_c_in)
+run_command(sh, '-c', marker_cmd, check: true)
 
 config_c = configure_file(
   input: config_c_in,
