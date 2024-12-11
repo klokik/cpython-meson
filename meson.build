@@ -1366,3 +1366,9 @@ python3 = executable('python3',
   include_directories: py_include_dirs,
   dependencies: python3_dep,
   install: true)
+
+zip = find_program('zip')
+python_lib_zip = custom_target('python-lib-zip',
+  output: 'python@0@.zip'.format(meson.project_version()),
+  command: [zip, '-FSr', '@OUTPUT@', meson.current_source_dir() / 'Lib'],
+  build_always_stale: true)
