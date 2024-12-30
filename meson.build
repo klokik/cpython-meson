@@ -7,6 +7,8 @@ project('cpython', 'c',
 cc = meson.get_compiler('c')
 zlib_dep = dependency('zlib')
 
+with_perf_trampoline = false
+
 py_deps = [
   cc.find_library('m'),
   zlib_dep,
@@ -363,7 +365,7 @@ py_sources = {
     'Python/tracemalloc.c',
     'Python/uniqueid.c',
 
-    # 'Python/asm_trampoline.S',
+    with_perf_trampoline ? ['Python/asm_trampoline.S'] : [],
 
     'Modules/_abc.c',
     'Modules/_asynciomodule.c',

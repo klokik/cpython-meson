@@ -12,6 +12,16 @@ chflags_run = cc.run('''
     return 0;
   }''')
 
+lchflags_run = cc.run('''
+  #include <sys/stat.h>
+  #include <unistd.h>
+  int main(int argc, char *argv[])
+  {
+    if(lchflags(argv[0], 0) != 0)
+      return 1;
+    return 0;
+  }''')
+
 # true on mac?
 broken_sem_getvalue_run = cc.run('''
   #include <unistd.h>
@@ -131,9 +141,9 @@ pyconfig_data = configuration_data({
   'HAVE_INET_NTOA': true,
   'HAVE_INET_PTON': true,
   'HAVE_KQUEUE': cc.has_function('kqueue', prefix: ['#include <sys/types.h>', '#include <sys/event.h>']),
-  'HAVE_LCHFLAGS': true, #fixme mac
-  'HAVE_LCHMOD': true, #fixme mac
-  'HAVE_LIBDB': true, #fixme
+  'HAVE_LCHFLAGS': lchflags_run.compiled() and lchflags_run.returncode() == 0,
+  'HAVE_LCHMOD': not is_linux,
+  'HAVE_LIBDB': cc.has_header('ndbm.h'),
   'HAVE_LIBDL': true,
   'HAVE_LIBSQLITE3': true,
   'HAVE_LINK': true,
@@ -177,7 +187,7 @@ pyconfig_data = configuration_data({
   'HAVE_SHM_UNLINK': true,
   'HAVE_SIGINFO_T_SI_BAND': true,
   'HAVE_SOCKADDR_ALG': cc.has_type('sockaddr_alg', prefix: '#include <linux/if_alg.h>'),
-  'HAVE_SOCKADDR_SA_LEN': true, #fixme mac
+  'HAVE_SOCKADDR_SA_LEN': cc.has_member('struct sockaddr', 'sa_len', prefix: '#include <sys/socket.h>'),
   'HAVE_SOCKADDR_STORAGE': true,
   'HAVE_SOCKET': true,
   'HAVE_SOCKETPAIR': true,
@@ -214,7 +224,7 @@ pyconfig_data = configuration_data({
   'PYTHREAD_NAME_MAXLEN': 15, #fixme
   'PY_BUILTIN_HASHLIB_HASHES': '"md5,sha1,sha2,sha3,blake2"',
   'PY_COERCE_C_LOCALE': true,
-  'PY_HAVE_PERF_TRAMPOLINE': is_linux,
+  'PY_HAVE_PERF_TRAMPOLINE': with_perf_trampoline,
   'PY_SQLITE_HAVE_SERIALIZE': true,
   'PY_SSL_DEFAULT_CIPHERS': true,
   'PY_SUPPORT_TIER': true,
@@ -392,7 +402,6 @@ check_functions_str = '''
 check_functions = check_functions_str.replace('  ', ' ').replace('\n', '').split(' ')
 
 int_tests = [
-  'sem_clockwait',
   'sem_getvalue',
   'sem_open',
   'sem_unlink',
@@ -414,6 +423,7 @@ foreach f : check_functions
     '#include <string.h>',
     '#include <sys/utsname.h>',
     '#include <signal.h>',
+    '#include <time.h>',
     '#include <pthread.h>',
     '#include <pwd.h>',
     '#if __has_include(<libintl.h>)',
@@ -427,6 +437,11 @@ foreach f : check_functions
   endif
   pyconfig_data.set(f'HAVE_@def_name@', val)
 endforeach
+
+#linux specific hacks
+if is_linux
+  pyconfig_data.set('HAVE_TIMEGM', true)
+endif
 
 #macos scpecific hacks
 if is_darwin
