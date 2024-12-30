@@ -363,7 +363,7 @@ py_sources = {
     'Python/tracemalloc.c',
     'Python/uniqueid.c',
 
-    'Python/asm_trampoline.S',
+    # 'Python/asm_trampoline.S',
 
     'Modules/_abc.c',
     'Modules/_asynciomodule.c',
@@ -822,6 +822,10 @@ py_c_args = [
   '-DPy_BUILD_CORE',
   '-DPy_ENABLE_SHARED',
   '-DSOABI="cpython-314-x86_64-linux-gnu"',
+
+  '-Wno-macro-redefined', # annoying macos warnings #fixme
+
+  '-DUSING_APPLE_OS_LIBFFI=@0@'.format(is_darwin.to_int()),
 ]
 
 # common sources between helper tools and primary targets
